@@ -134,11 +134,24 @@
       document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===key));
       document.getElementById("studio").scrollIntoView({behavior:"smooth"});
     }
-    function showStatus(){
+    async function showStatus(){
       const p=document.getElementById("prompt").value.trim();
       const r=document.getElementById("result");
       r.style.display="block";
-      r.textContent=p ? "Your request is ready for the CityFive AI backend. AI generation is not connected in this starter build yet. Next: deploy the private backend and connect a self-hosted model." : "Please enter a prompt first. Your AI engine will be connected in the backend development stage.";
+      if(!p){r.textContent="Please enter a message first.";return;}
+      r.textContent="Connecting to CityFive AI...";
+      try{
+        const response=await fetch("https://poetry-violent-giraffe.abasthan.app/api/chat",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({message:p})
+        });
+        const data=await response.json();
+        if(!response.ok){r.textContent=data.error || "CityFive AI is not ready yet.";return;}
+        r.textContent=data.reply || "No response received.";
+      }catch(error){
+        r.textContent="Could not connect to CityFive AI. Please try again.";
+      }
     }
   </script>
 </body>
