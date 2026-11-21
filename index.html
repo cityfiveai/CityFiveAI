@@ -110,6 +110,7 @@
             <div class="notice">Development mode: this starter website does not call an AI model yet. The next engineering step is to build CityFive's private backend and connect self-hosted models. Never put private model keys or server passwords in this page.</div>
             <div class="result" id="result" aria-live="polite"></div>
             <div id="chatPanel" style="display:none">
+              <div id="savedChats" style="margin-bottom:15px"></div>
               <div id="chatMessages" aria-live="polite"></div>
               <textarea id="chatInput" placeholder="Message CityFive AI..."></textarea>
               <button class="primary" onclick="sendChatMessage()">Send message →</button>
@@ -189,6 +190,98 @@
       }
     }
 
+
+    let savedConversations = [];
+    let activeChatId = null;
+
+    try {
+      savedConversations = JSON.parse(localStorage.getItem("cityfiveSavedChats") || "[]");
+      if (!Array.isArray(savedConversations)) savedConversations = [];
+    } catch(error) {
+      savedConversations = [];
+    }
+
+    function saveConversations() {
+      localStorage.setItem("cityfiveSavedChats", JSON.stringify(savedConversations));
+    }
+
+    function saveCurrentChat() {
+      if (!chatHistory.length) return;
+      if (!activeChatId) activeChatId = String(Date.now());
+
+      let chat = savedConversations.find(c => c.id === activeChatId);
+      if (!chat) {
+        chat = {id:activeChatId, title:chatHistory[0].content.slice(0,35), messages:[]};
+        savedConversations.unshift(chat);
+      }
+      chat.messages = [...chatHistory];
+      chat.updated = Date.now();
+      saveConversations();
+      renderSavedChats();
+    }
+
+    function renderSavedChats() {
+      const box = document.getElementById("savedChats");
+      box.replaceChildren();
+
+      const heading = document.createElement("strong");
+      heading.textContent = "SAVED CONVERSATIONS";
+      heading.style.color = "#d8b56d";
+      box.appendChild(heading);
+
+      savedConversations.forEach(chat => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;gap:6px;align-items:center;margin:8px 0;flex-wrap:wrap";
+
+        const open = document.createElement("button");
+        open.textContent = chat.title || "Untitled chat";
+        open.style.flex = "1";
+        open.onclick = () => openSavedChat(chat.id);
+
+        const rename = document.createElement("button");
+        rename.textContent = "Rename";
+        rename.onclick = () => renameSavedChat(chat.id);
+
+        const remove = document.createElement("button");
+        remove.textContent = "Delete";
+        remove.onclick = () => deleteSavedChat(chat.id);
+
+        row.append(open, rename, remove);
+        box.appendChild(row);
+      });
+    }
+
+    function openSavedChat(id) {
+      const chat = savedConversations.find(c => c.id === id);
+      if (!chat) return;
+      activeChatId = id;
+      chatHistory = [...chat.messages];
+      renderChatMessages();
+    }
+
+    function renameSavedChat(id) {
+      const chat = savedConversations.find(c => c.id === id);
+      if (!chat) return;
+      const name = prompt("Enter a new conversation name:", chat.title);
+      if (name && name.trim()) {
+        chat.title = name.trim();
+        saveConversations();
+        renderSavedChats();
+      }
+    }
+
+    function deleteSavedChat(id) {
+      if (!confirm("Delete this conversation?")) return;
+      savedConversations = savedConversations.filter(c => c.id !== id);
+      if (activeChatId === id) {
+        activeChatId = null;
+        chatHistory = [];
+        renderChatMessages();
+      }
+      saveConversations();
+      renderSavedChats();
+    }
+
     function renderChatMessages() {
       const box = document.getElementById("chatMessages");
       box.replaceChildren();
@@ -226,6 +319,7 @@
         chatHistory.push({role:"assistant",content:data.reply || "No response received."});
         while (chatHistory.length > 20) chatHistory.splice(0,2);
         sessionStorage.setItem("cityfiveChatHistory",JSON.stringify(chatHistory));
+        saveCurrentChat();
         renderChatMessages();
       } catch(error) {
         chatHistory.pop();
@@ -239,11 +333,18 @@
     }
 
     function newChat() {
+      saveCurrentChat();
       chatHistory = [];
+      activeChatId = null;
       sessionStorage.removeItem("cityfiveChatHistory");
       renderChatMessages();
+      renderSavedChats();
       document.getElementById("chatInput").value = "";
     }
+
+    renderSavedChats();
+    renderChatMessages();
+
   </script>
 </body>
 </html>
