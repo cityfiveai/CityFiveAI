@@ -109,6 +109,12 @@
             <button class="primary" style="margin-top:15px" onclick="showStatus()">Prepare generation request →</button>
             <div class="notice">Development mode: this starter website does not call an AI model yet. The next engineering step is to build CityFive's private backend and connect self-hosted models. Never put private model keys or server passwords in this page.</div>
             <div class="result" id="result" aria-live="polite"></div>
+            <div id="chatPanel" style="display:none">
+              <div id="chatMessages" aria-live="polite"></div>
+              <textarea id="chatInput" placeholder="Message CityFive AI..."></textarea>
+              <button class="primary" onclick="sendChatMessage()">Send message →</button>
+              <button type="button" onclick="newChat()">＋ New Chat</button>
+            </div>
           </div>
         </div>
       </section>
@@ -131,6 +137,17 @@
       document.getElementById("toolDesc").textContent=t.desc;
       document.getElementById("prompt").placeholder=t.placeholder;
       document.getElementById("result").style.display="none";
+      document.getElementById("chatPanel").style.display = key === "chat" ? "block" : "none";
+      ["prompt","tone"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = key === "chat" ? "none" : "";
+      });
+      document.querySelectorAll('label[for="prompt"],label[for="tone"]').forEach(el => {
+        el.style.display = key === "chat" ? "none" : "";
+      });
+      document.querySelectorAll('.workmain button[onclick="showStatus()"],.workmain .notice').forEach(el => {
+        el.style.display = key === "chat" ? "none" : "";
+      });
       document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===key));
       document.getElementById("studio").scrollIntoView({behavior:"smooth"});
     }
@@ -170,6 +187,62 @@
         chatHistory.pop();
         r.textContent="Could not connect to CityFive AI. Please try again.";
       }
+    }
+
+    function renderChatMessages() {
+      const box = document.getElementById("chatMessages");
+      box.replaceChildren();
+      chatHistory.forEach(item => {
+        const bubble = document.createElement("div");
+        bubble.style.cssText = "padding:12px;margin:10px 0;border:1px solid #6a542c;border-radius:10px;white-space:pre-wrap;overflow-wrap:anywhere;color:#f0dfbd";
+        bubble.textContent = (item.role === "user" ? "You: " : "CityFive AI: ") + item.content;
+        box.appendChild(bubble);
+      });
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendChatMessage() {
+      const input = document.getElementById("chatInput");
+      const message = input.value.trim();
+      if (!message) return;
+
+      input.value = "";
+      chatHistory.push({role:"user",content:message});
+      renderChatMessages();
+
+      const button = document.querySelector('#chatPanel button.primary');
+      button.disabled = true;
+      button.textContent = "Thinking...";
+
+      try {
+        const response = await fetch("https://poetry-violent-giraffe.abasthan.app/api/chat", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({messages:chatHistory.slice(-20)})
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "CityFive AI is not ready yet.");
+
+        chatHistory.push({role:"assistant",content:data.reply || "No response received."});
+        while (chatHistory.length > 20) chatHistory.splice(0,2);
+        sessionStorage.setItem("cityfiveChatHistory",JSON.stringify(chatHistory));
+        renderChatMessages();
+      } catch(error) {
+        chatHistory.pop();
+        input.value = message;
+        renderChatMessages();
+        alert(error.message || "Could not connect to CityFive AI.");
+      } finally {
+        button.disabled = false;
+        button.textContent = "Send message →";
+      }
+    }
+
+    function newChat() {
+      chatHistory = [];
+      sessionStorage.removeItem("cityfiveChatHistory");
+      renderChatMessages();
+      document.getElementById("chatInput").value = "";
     }
   </script>
 </body>
