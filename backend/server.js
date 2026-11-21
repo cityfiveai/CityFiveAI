@@ -4,7 +4,7 @@ const cors = require("cors");
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "1mb" }));
 
 app.get("/", (req, res) => {
   res.json({
@@ -15,11 +15,37 @@ app.get("/", (req, res) => {
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const { message } = req.body;
+    const { message, messages } = req.body;
 
-    if (!message || !message.trim()) {
+    let chatMessages;
+
+    if (Array.isArray(messages) && messages.length > 0) {
+      chatMessages = messages
+        .filter(item =>
+          item &&
+          ["user", "assistant"].includes(item.role) &&
+          typeof item.content === "string" &&
+          item.content.trim()
+        )
+        .slice(-20)
+        .map(item => ({
+          role: item.role,
+          content: item.content.trim()
+        }));
+    } else if (typeof message === "string" && message.trim()) {
+      chatMessages = [
+        { role: "user", content: message.trim() }
+      ];
+    } else {
       return res.status(400).json({
         error: "Please enter a message."
+      });
+    }
+
+    if (chatMessages.length === 0 ||
+        chatMessages[chatMessages.length - 1].role !== "user") {
+      return res.status(400).json({
+        error: "Please send a valid user message."
       });
     }
 
@@ -41,9 +67,7 @@ app.post("/api/chat", async (req, res) => {
       },
       body: JSON.stringify({
         model,
-        messages: [
-          { role: "user", content: message }
-        ]
+        messages: chatMessages
       })
     });
 
