@@ -134,22 +134,40 @@
       document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===key));
       document.getElementById("studio").scrollIntoView({behavior:"smooth"});
     }
+    let chatHistory = [];
+    try {
+      chatHistory = JSON.parse(sessionStorage.getItem("cityfiveChatHistory") || "[]");
+      if (!Array.isArray(chatHistory)) chatHistory = [];
+    } catch(error) {
+      chatHistory = [];
+    }
+
     async function showStatus(){
       const p=document.getElementById("prompt").value.trim();
       const r=document.getElementById("result");
       r.style.display="block";
       if(!p){r.textContent="Please enter a message first.";return;}
       r.textContent="Connecting to CityFive AI...";
+      chatHistory.push({role:"user",content:p});
+      while(chatHistory.length > 20) chatHistory.splice(0,2);
       try{
         const response=await fetch("https://poetry-violent-giraffe.abasthan.app/api/chat",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({message:p})
+          body:JSON.stringify({messages:chatHistory})
         });
         const data=await response.json();
-        if(!response.ok){r.textContent=data.error || "CityFive AI is not ready yet.";return;}
-        r.textContent=data.reply || "No response received.";
+        if(!response.ok){
+          chatHistory.pop();
+          r.textContent=data.error || "CityFive AI is not ready yet.";
+          return;
+        }
+        const reply=data.reply || "No response received.";
+        chatHistory.push({role:"assistant",content:reply});
+        sessionStorage.setItem("cityfiveChatHistory",JSON.stringify(chatHistory));
+        r.textContent=reply;
       }catch(error){
+        chatHistory.pop();
         r.textContent="Could not connect to CityFive AI. Please try again.";
       }
     }
