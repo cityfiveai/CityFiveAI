@@ -331,6 +331,13 @@
       const box = document.getElementById("savedChats");
       box.replaceChildren();
 
+      if (chatHistory.length === 0) {
+        const welcome = document.createElement("div");
+        welcome.className = "chat-bubble ai-message";
+        welcome.textContent = "Welcome to CityFive AI! ✨\n\nI'm here to help you write, create, learn, and explore ideas. What would you like to work on today?";
+        box.appendChild(welcome);
+      }
+
       const heading = document.createElement("strong");
       heading.textContent = "SAVED CONVERSATIONS";
       heading.style.color = "#d8b56d";
