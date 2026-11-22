@@ -272,6 +272,16 @@
             <span class="tag" id="toolTag">TEXT CREATION</span>
             <h3 id="toolTitle">AI Writer</h3>
             <p id="toolDesc">Describe what you want CityFive to help you write.</p>
+            <label for="templateSelect">Choose a writing template</label>
+            <select id="templateSelect">
+              <option value="none">Custom Prompt (No Template)</option>
+              <option value="email">Professional Email</option>
+              <option value="proposal">Business Proposal</option>
+              <option value="blog">Blog Article</option>
+              <option value="social">Social Media Post</option>
+              <option value="product">Product Description</option>
+              <option value="coverletter">Cover Letter</option>
+            </select>
             <label for="prompt">Your prompt</label>
             <textarea id="prompt" placeholder="Example: Write an inspiring launch announcement for my new business..."></textarea>
             <label for="tone">Style</label>
@@ -331,7 +341,19 @@
     }
 
     async function showStatus(){
-      const p=document.getElementById("prompt").value.trim();
+      const userText=document.getElementById("prompt").value.trim();
+      const templateKey=document.getElementById("templateSelect").value;
+      const writerTemplates={
+        email:"Write a professional email with a clear subject, polite tone, and concise body.",
+        proposal:"Write a structured business proposal with an executive summary, objectives, and call to action.",
+        blog:"Write an engaging blog article with an attention-grabbing title, useful headings, and a conversational professional tone.",
+        social:"Write an engaging social media post with suitable emojis and three relevant hashtags.",
+        product:"Write a compelling product description highlighting benefits, key features, and a persuasive closing.",
+        coverletter:"Write a professional cover letter highlighting relevant experience and enthusiasm for the role.",
+        none:""
+      };
+      const instruction=writerTemplates[templateKey] || "";
+      const p=instruction ? instruction+"\\n\\nUser request: "+userText : userText;
       const r=document.getElementById("result");
       r.style.display="block";
       if(!p){r.textContent="Please enter a message first.";return;}
