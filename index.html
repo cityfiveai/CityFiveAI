@@ -353,7 +353,16 @@
         none:""
       };
       const instruction=writerTemplates[templateKey] || "";
-      const p=instruction ? instruction+"\\n\\nUser request: "+userText : userText;
+      const selectedStyle=document.getElementById("tone").value;
+      const styleInstructions={
+        "Professional":"Use a polished, formal, clear, and professional tone.",
+        "Creative":"Use imaginative language, fresh ideas, and engaging expressions.",
+        "Friendly":"Use a warm, approachable, conversational, and helpful tone.",
+        "Luxury":"Use elegant, sophisticated, premium-sounding language.",
+        "Short and direct":"Be concise, clear, and straight to the point."
+      };
+      const styleInstruction=styleInstructions[selectedStyle] || "";
+      const p=[instruction,styleInstruction,"User request: "+userText].filter(Boolean).join("\\n\\n");
       const r=document.getElementById("result");
       r.style.display="block";
       if(!p){r.textContent="Please enter a message first.";return;}
