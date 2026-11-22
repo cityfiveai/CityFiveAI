@@ -50,6 +50,15 @@
 
     /* CITYFIVE PREMIUM CHAT STUDIO */
 
+    .message-time {
+      display: inline-block;
+      margin-top: 7px;
+      font-size: 10px;
+      color: #b7a47e;
+      opacity: 0.85;
+    }
+
+
     .typing-dots {
       display: inline-flex;
       align-items: center;
@@ -439,6 +448,17 @@
         const bubble = document.createElement("div");
         bubble.className = "chat-bubble " + (item.role === "user" ? "user-message" : "ai-message");
         bubble.textContent = (item.role === "user" ? "You: " : "CityFive AI: ") + item.content;
+
+        if (item.timestamp) {
+          const time = document.createElement("small");
+          time.className = "message-time";
+          time.textContent = new Date(item.timestamp).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+          });
+          bubble.appendChild(document.createElement("br"));
+          bubble.appendChild(time);
+        }
         box.appendChild(bubble);
       });
       box.scrollTop = box.scrollHeight;
@@ -450,7 +470,7 @@
       if (!message) return;
 
       input.value = "";
-      chatHistory.push({role:"user",content:message});
+      chatHistory.push({role:"user",content:message,timestamp:Date.now()});
       renderChatMessages();
 
       const button = document.querySelector('#chatPanel button.primary');
@@ -473,7 +493,7 @@
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "CityFive AI is not ready yet.");
 
-        chatHistory.push({role:"assistant",content:data.reply || "No response received."});
+        chatHistory.push({role:"assistant",content:data.reply || "No response received.",timestamp:Date.now()});
         while (chatHistory.length > 20) chatHistory.splice(0,2);
         sessionStorage.setItem("cityfiveChatHistory",JSON.stringify(chatHistory));
         saveCurrentChat();
