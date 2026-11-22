@@ -363,7 +363,8 @@
       };
       const styleInstruction=styleInstructions[selectedStyle] || "";
       const writerRules="Follow the user's instructions exactly. If the user requests one answer, provide exactly one answer. Do not provide multiple options, alternatives, introductions, recommendations, or explanations unless requested. Respect the requested length, tone, format, and language. Be clear and relevant. Never invent facts, statistics, credentials, product features, or claims. If information is missing, do not pretend it is known.";
-      const p=[writerRules,instruction,styleInstruction,"User request: "+userText].filter(Boolean).join("\\n\\n");
+      const qualityRules="Produce polished, natural, high-quality writing. Use correct grammar, spelling, punctuation, and sentence flow. Organize ideas logically and use headings or paragraphs when they improve readability. Avoid repetition, awkward phrasing, clichés, and robotic language. Match the audience and purpose. Preserve the user’s intended meaning and do not add unsupported details.";
+      const p=[writerRules,qualityRules,instruction,styleInstruction,"User request: "+userText].filter(Boolean).join("\\n\\n");
       const r=document.getElementById("result");
       r.style.display="block";
       if(!p){r.textContent="Please enter a message first.";return;}
