@@ -362,7 +362,8 @@
         "Short and direct":"Be concise, clear, and straight to the point."
       };
       const styleInstruction=styleInstructions[selectedStyle] || "";
-      const p=[instruction,styleInstruction,"User request: "+userText].filter(Boolean).join("\\n\\n");
+      const writerRules="Follow the user's instructions exactly. If the user requests one answer, provide exactly one answer. Do not provide multiple options, alternatives, introductions, recommendations, or explanations unless requested. Respect the requested length, tone, format, and language. Be clear and relevant. Never invent facts, statistics, credentials, product features, or claims. If information is missing, do not pretend it is known.";
+      const p=[writerRules,instruction,styleInstruction,"User request: "+userText].filter(Boolean).join("\\n\\n");
       const r=document.getElementById("result");
       r.style.display="block";
       if(!p){r.textContent="Please enter a message first.";return;}
