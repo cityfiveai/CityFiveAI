@@ -50,6 +50,42 @@
 
     /* CITYFIVE PREMIUM CHAT STUDIO */
 
+    .typing-dots {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 2px;
+    }
+
+    .typing-dots i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      display: block;
+      animation: cityfiveTyping 1.2s infinite ease-in-out;
+    }
+
+    .typing-dots i:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dots i:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes cityfiveTyping {
+      0%, 60%, 100% {
+        opacity: 0.35;
+        transform: translateY(0);
+      }
+      30% {
+        opacity: 1;
+        transform: translateY(-6px);
+      }
+    }
+
+
     .chat-bubble {
       width: fit-content;
       max-width: 88%;
@@ -423,7 +459,7 @@
 
       const typing = document.createElement("div");
       typing.className = "chat-bubble ai-message typing-indicator";
-      typing.textContent = "CityFive AI is thinking...";
+      typing.innerHTML = '<span class="typing-dots"><i></i><i></i><i></i></span>';
       document.getElementById("chatMessages").appendChild(typing);
       document.getElementById("chatMessages").scrollTop =
         document.getElementById("chatMessages").scrollHeight;
