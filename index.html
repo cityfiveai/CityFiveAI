@@ -50,6 +50,24 @@
 
     /* CITYFIVE PREMIUM CHAT STUDIO */
 
+    .copy-message-button {
+      display: inline-block;
+      margin-top: 9px;
+      padding: 6px 12px;
+      color: #f1d58d;
+      background: #17140f;
+      border: 1px solid #594625;
+      border-radius: 7px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .copy-message-button:hover {
+      background: #292012;
+      border-color: var(--gold);
+    }
+
+
     .message-time {
       display: inline-block;
       margin-top: 7px;
@@ -459,6 +477,28 @@
           bubble.appendChild(document.createElement("br"));
           bubble.appendChild(time);
         }
+        if (item.role === "assistant") {
+          const copyButton = document.createElement("button");
+          copyButton.type = "button";
+          copyButton.className = "copy-message-button";
+          copyButton.textContent = "Copy";
+
+          copyButton.addEventListener("click", async () => {
+            try {
+              await navigator.clipboard.writeText(item.content);
+              copyButton.textContent = "Copied!";
+              setTimeout(() => {
+                copyButton.textContent = "Copy";
+              }, 1800);
+            } catch (error) {
+              alert("Unable to copy this message. Please try again.");
+            }
+          });
+
+          bubble.appendChild(document.createElement("br"));
+          bubble.appendChild(copyButton);
+        }
+
         box.appendChild(bubble);
       });
       box.scrollTop = box.scrollHeight;
