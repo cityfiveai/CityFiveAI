@@ -136,7 +136,9 @@ app.post("/api/video/generate", async (req, res) => {
     if (!response.ok) {
       console.error("Agnes video request failed:", response.status, data);
       return res.status(502).json({
-        error: "Agnes could not accept the video request. Please try again later."
+        error: "Agnes video request failed.",
+        provider_status: response.status,
+        provider_error: data
       });
     }
 
