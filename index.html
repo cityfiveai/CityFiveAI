@@ -611,6 +611,7 @@
       const prompt = document.getElementById("videoPrompt").value.trim();
       const aspect = document.getElementById("videoAspect").value;
       const result = document.getElementById("videoResult");
+      result.style.display = "block";
 
       if (!prompt) {
         result.textContent = "Please describe the video you want to create.";
