@@ -299,6 +299,7 @@
               </select>
               <p class="notice">Test mode: generates one short video clip, up to 12 seconds. Longer multi-scene videos are planned.</p>
               <button class="primary" type="button" onclick="generateVideo()">Generate video →</button>
+              <button class="primary" id="checkVideoStatusBtn" type="button" onclick="checkVideoStatus()" style="display:none">Check video status</button>
               <div class="result" id="videoResult" aria-live="polite"></div>
             </div>
             <div class="result" id="result" aria-live="polite"></div>
@@ -436,6 +437,44 @@
       chat.updated = Date.now();
       saveConversations();
       renderSavedChats();
+    }
+
+    async function checkVideoStatus() {
+      const result = document.getElementById("videoResult");
+      const videoId = window.currentVideoId;
+
+      if (!videoId) {
+        result.textContent = "No video job ID is available yet.";
+        return;
+      }
+
+      result.textContent = "Checking video status...";
+
+      try {
+        const response = await fetch(
+          "https://poetry-violent-giraffe.abasthan.app/api/video/status/" + encodeURIComponent(videoId)
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          result.textContent = "Status check failed: " + (data.error || "Please try again later.");
+          return;
+        }
+
+        result.textContent = "Video status: " + (data.status || "processing");
+
+        if (data.video_url) {
+          const video = document.createElement("video");
+          video.controls = true;
+          video.style.display = "block";
+          video.style.width = "100%";
+          video.style.marginTop = "12px";
+          video.src = data.video_url;
+          result.appendChild(video);
+        }
+      } catch (error) {
+        result.textContent = "Could not check video status. Please try again.";
+      }
     }
 
     function renderSavedChats() {
@@ -639,9 +678,13 @@
           return;
         }
 
-        result.textContent = data.video_id
-          ? "Your video request was accepted. Job ID: " + data.video_id + ". Generation is in progress."
-          : "Agnes AI responded, but did not return a video job ID. Response: " + JSON.stringify(data);
+        if (data.video_id) {
+          window.currentVideoId = data.video_id;
+          result.textContent = "Your video request was accepted. Job ID: " + data.video_id + ". Generation is in progress.";
+          document.getElementById("checkVideoStatusBtn").style.display = "block";
+        } else {
+          result.textContent = "Agnes AI responded, but did not return a video job ID. Response: " + JSON.stringify(data);
+        }
       } catch (error) {
         result.textContent = "Could not reach the video service. Please check your connection and try again.";
       }
