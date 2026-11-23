@@ -288,6 +288,19 @@
             <select id="tone"><option>Professional</option><option>Creative</option><option>Friendly</option><option>Luxury</option><option>Short and direct</option></select>
             <button class="primary" style="margin-top:15px" onclick="showStatus()">Generate with CityFive AI →</button>
             <div class="notice">AI Connected: CityFive AI Writer and Chat Studio are powered by Gemini through our secure backend. Additional tools and features are currently in development. Never put private model keys or server passwords in this page.</div>
+            <div id="videoPanel" style="display:none">
+              <label for="videoPrompt">Describe your video</label>
+              <textarea id="videoPrompt" placeholder="Example: A cinematic golden sunrise over a tropical beach, gentle waves and smooth camera movement..."></textarea>
+              <label for="videoAspect">Video format</label>
+              <select id="videoAspect">
+                <option value="16:9">Landscape (16:9)</option>
+                <option value="9:16">Portrait (9:16)</option>
+                <option value="1:1">Square (1:1)</option>
+              </select>
+              <p class="notice">Test mode: generates one short video clip, up to 12 seconds. Longer multi-scene videos are planned.</p>
+              <button class="primary" type="button" onclick="generateVideo()">Generate video →</button>
+              <div class="result" id="videoResult" aria-live="polite"></div>
+            </div>
             <div class="result" id="result" aria-live="polite"></div>
             <div id="chatPanel" style="display:none">
               <div id="savedChats" style="margin-bottom:15px"></div>
@@ -318,16 +331,17 @@
       document.getElementById("toolDesc").textContent=t.desc;
       document.getElementById("prompt").placeholder=t.placeholder;
       document.getElementById("result").style.display="none";
+      document.getElementById("videoPanel").style.display = key === "video" ? "block" : "none";
       document.getElementById("chatPanel").style.display = key === "chat" ? "block" : "none";
-      ["prompt","tone"].forEach(id => {
+      ["prompt","tone","templateSelect"].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.style.display = key === "chat" ? "none" : "";
+        if (el) el.style.display = (key === "chat" || key === "video") ? "none" : "";
       });
-      document.querySelectorAll('label[for="prompt"],label[for="tone"]').forEach(el => {
-        el.style.display = key === "chat" ? "none" : "";
+      document.querySelectorAll('label[for="prompt"],label[for="tone"],label[for="templateSelect"]').forEach(el => {
+        el.style.display = (key === "chat" || key === "video") ? "none" : "";
       });
       document.querySelectorAll('.workmain button[onclick="showStatus()"],.workmain .notice').forEach(el => {
-        el.style.display = key === "chat" ? "none" : "";
+        el.style.display = (key === "chat" || key === "video") ? "none" : "";
       });
       document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===key));
       document.getElementById("studio").scrollIntoView({behavior:"smooth"});
@@ -591,6 +605,45 @@
       renderChatMessages();
       renderSavedChats();
       document.getElementById("chatInput").value = "";
+    }
+
+    async function generateVideo() {
+      const prompt = document.getElementById("videoPrompt").value.trim();
+      const aspect = document.getElementById("videoAspect").value;
+      const result = document.getElementById("videoResult");
+
+      if (!prompt) {
+        result.textContent = "Please describe the video you want to create.";
+        return;
+      }
+
+      result.textContent = "Sending your video request to Agnes AI...";
+
+      try {
+        const response = await fetch("https://poetry-violent-giraffe.abasthan.app/api/video/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt, aspect_ratio: aspect })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          const providerError = data.provider_error || {};
+          if (providerError.code === "video_queue_full" || data.provider_status === 503) {
+            result.textContent = "Agnes AI's video queue is currently full. Please try again later. Your prompt is still here.";
+          } else {
+            result.textContent = "Video request failed: " + (providerError.message || data.error || "Please try again later.");
+          }
+          return;
+        }
+
+        result.textContent = data.video_id
+          ? "Your video request was accepted. Job ID: " + data.video_id + ". Generation is in progress."
+          : "Agnes AI responded, but did not return a video job ID. Response: " + JSON.stringify(data);
+      } catch (error) {
+        result.textContent = "Could not reach the video service. Please check your connection and try again.";
+      }
     }
 
     renderSavedChats();
