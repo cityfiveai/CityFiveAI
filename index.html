@@ -448,7 +448,7 @@
         return;
       }
 
-      result.textContent = "Checking video status...";
+      clearTimeout(window.videoStatusTimer);
 
       try {
         const response = await fetch(
@@ -461,7 +461,8 @@
           return;
         }
 
-        result.textContent = "Video status: " + (data.status || "processing");
+        const status = String(data.status || "processing").toLowerCase();
+        result.textContent = "Video status: " + status;
 
         if (data.video_url) {
           const video = document.createElement("video");
@@ -471,9 +472,25 @@
           video.style.marginTop = "12px";
           video.src = data.video_url;
           result.appendChild(video);
+          return;
         }
+
+        if (["failed", "error", "cancelled", "canceled"].includes(status)) {
+          result.textContent += ". Video generation did not complete.";
+          return;
+        }
+
+        if (["completed", "complete", "succeeded", "success", "ready"].includes(status)) {
+          result.textContent += ". Generation finished, but no video link was returned.";
+          return;
+        }
+
+        result.textContent += ". Checking again in 10 seconds...";
+        window.videoStatusTimer = setTimeout(checkVideoStatus, 10000);
+
       } catch (error) {
-        result.textContent = "Could not check video status. Please try again.";
+        result.textContent = "Could not check video status. Retrying in 10 seconds...";
+        window.videoStatusTimer = setTimeout(checkVideoStatus, 10000);
       }
     }
 
@@ -682,6 +699,7 @@
           window.currentVideoId = data.video_id;
           result.textContent = "Your video request was accepted. Job ID: " + data.video_id + ". Generation is in progress.";
           document.getElementById("checkVideoStatusBtn").style.display = "block";
+          checkVideoStatus();
         } else {
           result.textContent = "Agnes AI responded, but did not return a video job ID. Response: " + JSON.stringify(data);
         }
