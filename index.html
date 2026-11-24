@@ -704,7 +704,8 @@
           result.textContent = "Agnes AI responded, but did not return a video job ID. Response: " + JSON.stringify(data);
         }
       } catch (error) {
-        result.textContent = "Could not reach the video service. Please check your connection and try again.";
+        console.error("Video generation error:", error);
+        result.textContent = "Video connection error: " + (error.message || "Unknown error. Please try again.");
       }
     }
 
